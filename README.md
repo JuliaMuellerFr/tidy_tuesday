@@ -63,9 +63,15 @@ A simple **bar chart** of squirrel sightings in NYC and a **wordcloud** showing 
 ![Squirrel activities](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/plots/20_01_28_cloud.png)
 
 
+
 ### 20/01/21 Spotify
 
-...to be added soon...
+**Correlation plot** of all numeric variables and **linegraph** with labels for the most popular songs per genre.
+
+![Correlation plot](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/plots/20_01_21_corr.PNG)
+
+![Line graph of loudness and energy by genre](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/plots/20_01_21_plot.PNG)
+
 
 
 ## 2019
