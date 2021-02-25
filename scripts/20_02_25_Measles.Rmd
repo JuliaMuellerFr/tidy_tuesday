@@ -1,0 +1,86 @@
+---
+title: "Measles"
+author: "Julia Müller"
+date: "25 2 2020"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
+Created at an [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)!
+
+# Loading packages
+```{r}
+library(tidyverse)
+library(extrafont)
+# Importing more fonts - this takes a few minutes!
+# font_import() 
+loadfonts(device = "win") # windowsFonts() to list them
+```
+
+# Reading and preparing data
+Replacing -1 by NA and converting state to factor:
+```{r}
+measles <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-25/measles.csv')
+
+measles$mmr <- dplyr::na_if(measles$mmr, "-1")
+measles$overall <- dplyr::na_if(measles$overall, "-1")
+
+measles$state <- as.factor(measles$state)
+```
+
+Creating a new data frame with averages for the different vaccination rates as well as rates for exceptions based on religious, personal, or medical grounds:
+```{r}
+states <- measles %>% 
+    group_by(state) %>% 
+    summarise(mean_mmr = mean(mmr, na.rm = TRUE), 
+              mean_vacs = mean(overall, na.rm = TRUE),
+              count_rel = sum(xrel, na.rm = TRUE),
+              mean_pers = mean(xper, na.rm = TRUE),
+              mean_med = mean(xmed, na.rm = TRUE),
+              mean_excep = mean(c(count_rel, mean_pers, mean_med), na.rm = TRUE)
+              )
+summary(states)
+```
+
+# Plots
+```{r}
+plot_mmr <- states %>% 
+  drop_na(mean_mmr) %>% 
+  ggplot() +
+  aes(x = reorder(state, mean_mmr), y = mean_mmr) +
+  geom_point(aes(colour = mean_mmr), size = 4) +
+  scale_color_gradient(low = "#B10000", high = "#2D1C8C") +
+  geom_segment(aes(x = state, xend = state, y = 95, yend = mean_mmr), 
+               size = 1, alpha = 0.6) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        text = element_text(size = 12, family = "Constantia")) +
+  labs(x = "US state", y = "Measles, Mumps, and Rubella (MMR) vaccination rate",
+       title = "MMR vaccination rates in US schools",
+       subtitle = "Complete data available for 21 states.\nOnly eight out of these have a vaccination rate of 95% or higher. \nArkansas' rate is by far the lowest, at only slightly over 80%.") +
+  coord_flip() +
+  lims(y = c(80, 100))
+
+plot_all <- states %>% 
+  drop_na(mean_vacs) %>% 
+  ggplot() +
+  aes(x = reorder(state, mean_vacs), y = mean_vacs) +
+  geom_point(aes(colour = mean_vacs), size = 4) +
+  scale_color_gradient(low = "#B10000", high = "#2D1C8C") +
+  geom_segment(aes(x = state, xend = state, y = 95, yend = mean_vacs), 
+               size = 1, alpha = 0.6) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        text = element_text(size = 12, family = "Constantia")) +
+  labs(x = "US state", y = "Overall vaccination rate",
+       title = "Overall vaccination rates in US schools",
+       subtitle = "Complete data available for 17 states.\nOnly five out of these have a vaccination rate of 95% or higher. \nThis time, Idaho has the lowest rate.") +
+  coord_flip() +
+  lims(y = c(80, 100))
+
+plot_mmr; plot_all
+```
+

@@ -1,0 +1,78 @@
+---
+title: "Hotels"
+author: "Julia Müller"
+date: "11 2 2020"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
+Created at an [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)!
+
+# Data prep
+Loading packages:
+```{r}
+library(tidyverse)
+library(hablar)
+library(extrafont)
+# Importing more fonts - this takes a few minutes!
+# font_import() 
+loadfonts(device = "win") # windowsFonts() to list them
+```
+
+Reading in data:
+```{r}
+hotels <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-11/hotels.csv')
+```
+
+Calculating new variables and changing the factor levels for the meal options:
+```{r}
+hotels <- hotels %>% 
+  filter(is_canceled == 0) %>% 
+  mutate(stay = stays_in_weekend_nights + stays_in_week_nights,
+         kids = children + babies,
+         people = kids + adults
+         )
+hotels$meal <- plyr::revalue(hotels$meal, c("Undefined" = "No meal package", "SC" = "No meal package", "BB" = "Bed & Breakfast", "HB" = "Half board", "FB" = "Full board"))
+hotels$meal <- factor(hotels$meal, levels = c("No meal package", "Bed & Breakfast", "Half board", "Full board"))
+summary(hotels$meal)
+```
+
+# Plots
+```{r}
+plot_requests <- hotels %>% 
+  filter(people > 0 & kids < 4 & stay < 20 & country == "DEU") %>% 
+  ggplot() + 
+  geom_jitter(aes(total_of_special_requests, stay, size = people, color = kids)) +
+  labs(x = "Total number of special requests made by the guests",
+       y = "Days the guest stayed at the hotel",
+       title ="Special requests by length of hotel stay",
+       subtitle = "German guests only",
+       size = "Number of guests",
+       color = "Number of children") +
+  scale_colour_gradient(low = "#64B8CD", high = "#003345") +
+  theme_minimal() +
+  facet_grid(vars(hotel), vars(arrival_date_year)) +
+  theme(text = element_text(size = 16, family = "Zilla Slab"))
+
+plot_meals <- hotels %>% 
+  filter(people > 0 & kids < 4 & stay < 20 & country == "DEU") %>% 
+  ggplot() +
+  aes(people, stay, colour = meal, size = kids) +
+  geom_jitter() +
+  scale_colour_manual(values = c("#64B8CD", "#2D899D", "#005D70", "#003345")) +
+  labs(x = "Number of guests",
+       y = "Length of stay (in days)",
+       title ="Meal options in city and resort hotels",
+       subtitle = "German guests only",
+       size = "Number of children",
+       color = "Meal options") +
+  theme_minimal() +
+  facet_grid(vars(hotel), vars(arrival_date_year)) +
+  theme(text = element_text(size = 16, family = "Zilla Slab"))
+
+plot_requests; plot_meals
+```
+

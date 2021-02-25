@@ -1,0 +1,77 @@
+---
+title: "Food Consumption"
+author: "Julia Müller"
+date: "18 2 2020"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
+Created at an [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)!
+
+
+# Data prep
+
+Packages:
+```{r}
+library(tidyverse)
+library(hablar)
+library(extrafont)
+# Importing more fonts - this takes a few minutes!
+# font_import() 
+loadfonts(device = "win") # windowsFonts() to list them
+```
+
+Reading in:
+```{r}
+food_consumption <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-18/food_consumption.csv')
+```
+
+Shortening label names and converting to factors:
+```{r}
+food_consumption$food_category <- gsub("Milk - inc. cheese", "Milk/Cheese", food_consumption$food_category)
+food_consumption$food_category <- gsub("Nuts inc. Peanut Butter", "Nuts", food_consumption$food_category)
+food_consumption$food_category <- gsub("Wheat and Wheat Products", "Wheat", food_consumption$food_category)
+food_consumption$food_category <- gsub("Lamb & Goat", "Lamb/Goat", food_consumption$food_category)
+
+food_consumption <- food_consumption %>% 
+  convert(fct(country, food_category))
+```
+
+# Graphs
+```{r}
+p_comp <- food_consumption %>% 
+  filter(country %in% c("France", "Germany", "Argentina", "USA") &
+           food_category %in% c("Beef", "Pork", "Poultry", "Wheat", "Milk/Cheese")) %>%  
+  ggplot() + 
+  geom_text(aes(x = consumption, y = co2_emmission, label = food_category, colour = country), 
+            family = "Noto Sans",
+            #check_overlap = TRUE,
+            size = 4) + 
+  scale_colour_manual(values = c("#F26B38", "#EC2049", "#F7DB4F", "#2F9599")) +
+  labs(x = "Consumption", y = "CO2 emissions", colour = "Country",
+       title = "Consumption of beef, pork, poultry, wheat, and dairy products",
+       subtitle = "...and CO2 emissions in Argentina, France, Germany, and the US") +
+  theme_minimal() + 
+  theme(legend.position = "bottom", legend.direction = "horizontal",
+        text = element_text(size = 14, family = "Noto Serif"))
+
+p_ger <- food_consumption %>% 
+  filter(country == "Germany") %>%  
+  ggplot() + 
+  geom_text(aes(x = consumption, y = co2_emmission, label = food_category, colour = food_category), 
+            family = "Noto Sans",
+            size = 4) + 
+  scale_colour_manual(values = c("#A7226E", "#2F9599", "#2F9599", "#2F9599", "#EC2049", "#2F9599", 
+                                 "#F26B38", "#2F9599", "#2F9599", "#2F9599", "#F7DB4F")) +
+  labs(x = "Consumption", y = "CO2 emissions", colour = "Food category",
+       title = "Consumption of different food categories and CO2 emissions",
+       subtitle = "Germany") +
+  theme_minimal() + 
+  theme(text = element_text(size = 14, family = "Noto Serif"))
+
+p_comp; p_ger
+```
+

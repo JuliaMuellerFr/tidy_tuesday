@@ -1,0 +1,101 @@
+---
+title: "Spotify"
+author: "Julia Müller"
+date: "21 1 2020"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
+Created at an [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)!
+
+
+Loading packages
+```{r}
+library(tidyverse)
+library(Hmisc)
+library(RColorBrewer)
+library(extrafont)
+library(viridis)
+# Importing more fonts - this takes a few minutes!
+# font_import() 
+loadfonts(device = "win") # windowsFonts() to list them
+```
+Reading in data
+```{r}
+spotify <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv')
+```
+
+Relabeling the playlist genres and labeling the modes in an informative way
+```{r}
+spotify$playlist_genre <- as.factor(spotify$playlist_genre)
+spotify$playlist_genre <- plyr::revalue(spotify$playlist_genre,
+                                  c(edm = "EDM",
+                                    latin = "Latin",
+                                    pop = "Pop",
+                                    'r&b' = "R&B",
+                                    rap = "Rap",
+                                    rock = "Rock"))
+
+summary(spotify$playlist_genre)
+
+spotify$mode <- factor(spotify$mode,
+                       labels = c("minor", "major"))
+summary(spotify$mode)
+```
+
+Plotting
+```{r}
+ggplot(spotify, aes(x = reorder(playlist_genre, danceability), y = danceability, 
+                    fill = playlist_genre, colour = playlist_genre)) + 
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), trim = FALSE, alpha = 0.7) +
+  geom_jitter(width = 0.35, size = 0.8, alpha = 0.2) +
+  coord_flip() +
+  stat_summary(fun.data=mean_sdl, fun.args = list(mult = 1), 
+                 geom = "pointrange", aes(color = playlist_genre)) +
+  scale_fill_brewer(palette = "RdBu") +
+  scale_colour_brewer(palette = "RdBu") +
+  theme_light() +
+  labs(title = "Danceability of different genres",
+       x = "Genre", y = "Danceability") +
+  theme(legend.position = "none",
+        text = element_text(size = 14, family = "Poor Richard")) +
+  facet_wrap(~ mode) + 
+  ylim(0, 1)
+
+ggplot(spotify, aes(x = reorder(playlist_genre, danceability), y = danceability, 
+                    fill = playlist_genre, colour = playlist_genre)) + 
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), trim = FALSE, alpha = 0.7) +
+  geom_jitter(width = 0.35, size = 0.8, alpha = 0.2) +
+  coord_flip() +
+  stat_summary(fun.data=mean_sdl, fun.args = list(mult = 1), 
+                 geom = "pointrange", aes(color = playlist_genre)) +
+  scale_fill_viridis_d() + scale_colour_viridis_d() +
+  theme_light() +
+  labs(title = "Danceability of different genres",
+       x = "Genre", y = "Danceability") +
+  theme(legend.position = "none",
+        text = element_text(size = 14, family = "Poor Richard")) +
+  facet_wrap(~ mode) + 
+  ylim(0, 1)
+
+ggplot(spotify, aes(x = reorder(playlist_genre, danceability), y = danceability, 
+                    fill = playlist_genre, colour = playlist_genre)) + 
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  geom_jitter(width = 0.35, size = 0.8, alpha = 0.1) +
+  coord_flip() +
+  stat_summary(fun.data=mean_sdl, fun.args = list(mult = 1), 
+                 geom = "pointrange", aes(color = playlist_genre)) +
+  scale_colour_manual(values = c("#DEAD00", "#83A92E", "#2C9759", "#007F72", "#006472", "#2F4858")) +
+  scale_fill_manual(values = c("#DEAD00", "#83A92E", "#2C9759", "#007F72", "#006472", "#2F4858")) +
+  theme_light() +
+  labs(title = "Danceability of different genres",
+       x = "Genre", y = "Danceability") +
+  theme(legend.position = "none",
+        text = element_text(size = 14, family = "Poor Richard")) +
+  facet_wrap(~ mode) + 
+  ylim(0, 1)
+```
+

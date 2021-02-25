@@ -1,0 +1,96 @@
+---
+title: "NYC Squirrels"
+author: "Julia Müller"
+date: "28 1 2020"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
+Created at an [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)!
+
+# Loading packages
+```{r}
+library(tidyverse)
+library(lubridate)
+library(tm)
+library(wordcloud)
+library(extrafont)
+# Importing more fonts - this takes a few minutes!
+# font_import() 
+loadfonts(device = "win") # windowsFonts() to list them
+```
+
+# Reading and preparing data
+```{r}
+nyc_squirrels <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-29/nyc_squirrels.csv")
+```
+
+Using functions from the lubridate package to convert dates and add information on the days of the week:
+```{r}
+nyc_squirrels$date_ <- lubridate::mdy(nyc_squirrels$date)
+nyc_squirrels$weekday <- lubridate::wday(nyc_squirrels$date_, label = TRUE)
+summary(nyc_squirrels$weekday)
+nyc_squirrels$weekday <- factor(nyc_squirrels$weekday, levels = c("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"))
+nyc_squirrels$weekday <- factor(nyc_squirrels$weekday, 
+                                levels = c("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"),
+                                labels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+summary(nyc_squirrels$weekday)
+
+nyc_squirrels$age <- as.factor(nyc_squirrels$age)
+nyc_squirrels$age <- relevel(nyc_squirrels$age, "Juvenile")
+summary(nyc_squirrels$age)
+```
+
+# Plot
+```{r}
+plot <- nyc_squirrels %>% 
+  drop_na(primary_fur_color) %>%
+  filter(age == "Adult" | age == "Juvenile") %>% 
+  ggplot() + 
+  geom_bar(aes(weekday, fill = primary_fur_color), position = "dodge") +
+  scale_fill_manual("legend", 
+                    values = c("Black" = "black", "Cinnamon" = "#863800", "Gray" = "#4D4E4F")) +
+  labs(x = "Day (no data available for Tuesdays)", 
+       y = "Number of squirrels sighted", 
+        title ="Squirrel sightings by day and primary fur colour") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 50),
+        text = element_text(size = 14, family = "Poor Richard")) +
+  facet_wrap(~ age, scales = "free")
+
+plot
+```
+
+# Word cloud
+Definitely a quick and dirty wordcloud - the text could do with a lemmatizer.
+```{r}
+text_activities <- nyc_squirrels$other_activities
+
+docs <- Corpus(VectorSource(text_activities))
+docs <- docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace) %>% 
+  tm_map(removeWords, stopwords("english")) %>% 
+  tm_map(removeWords, "—") %>% 
+  tm_map(content_transformer(tolower))
+
+# conversion from corpus back to data frame
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+
+green_grad <- c("#585743", "#55894B", "#2D6026", "#005A27", "#013A00")
+
+wordcloud(df$word, df$freq, 
+          min.freq = 2, random.order=FALSE, rot.per=0.3,
+          colors = green_grad, 
+          family = "Poor Richard")
+```
+

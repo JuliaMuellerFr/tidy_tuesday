@@ -1,0 +1,65 @@
+---
+title: "Animal Crossing"
+author: "Julia Müller"
+date: "5 5 2020"
+output: html_document
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
+Created at a virtual [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)! This time, I used data on the Animal Crossing villagers and their character traits to create chord diagrams with the [circlize package](https://cran.r-project.org/web/packages/circlize/index.html), mostly following [this and the following chapters](https://jokergoo.github.io/circlize_book/book/the-chorddiagram-function.html) in Gu's "Circular Visualization in R" book (2014).
+
+# Importing packages
+```{r}
+library(circlize)
+library(hablar)
+library(tidyverse)
+```
+
+# Data prep
+Reading in the data. Converting to factors, counting up how often which species occur, and limiting the data set to the more frequent villager species (that occur more than 15 times)
+```{r}
+villagers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-05/villagers.csv')
+
+villagers <- villagers %>% 
+  convert(fct(gender, species, personality, song, phrase))
+
+villagers %>% 
+  count(species, sort = TRUE)
+
+villagers_freq <- villagers %>%
+  filter(species %in% c("cat", "rabbit", "frog", "squirrel", "duck", "cub", "dog"))
+```
+
+## Reformatting the data
+...into a crosstable for each combination of villager personality and species, then removing zero counts
+```{r}
+villagers_x <- xtabs(~ personality + species, villagers_freq)
+
+villagers_x <- villagers_x %>% 
+  as_tibble() %>% 
+  filter(n > 0)
+```
+
+# Chord diagram
+First step: pick some colours for the personality traits and their connections to the species, while the species should just be shown in gray.  
+Then: chord diagram of crosstable created in the previous step.
+```{r}
+grid.col = c(uchi = "#440154FF", 
+             snooty = "#46337EFF", 
+             smug = "#365C8DFF", 
+             peppy = "#277F8EFF", 
+             normal = "#1FA187FF",
+             lazy = "#4AC16DFF", 
+             jock = "#9FDA3AFF", 
+             cranky = "#FDE725FF",
+             cat = "gray", cub = "gray", dog = "grey", duck = "grey", 
+             frog = "grey", rabbit = "grey", squirrel = "grey")
+
+chordDiagram(villagers_x, link.sort = TRUE, link.decreasing = TRUE, 
+             grid.col = grid.col, transparency = 0.3, annotationTrack = c("name","grid"))
+
+circos.clear()
+```

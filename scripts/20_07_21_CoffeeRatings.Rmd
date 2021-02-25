@@ -1,0 +1,121 @@
+---
+title: "Coffee ratings"
+author: "Julia Müller"
+date: "21 7 2020"
+output: html_document
+---
+
+
+Created at a virtual [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)! I decided to learn about ridgeline plots - visualisations of the density distribution of several variables or across several categories, often used to show developments over time, e.g. temperatures per month. [This blog post](https://www.datanovia.com/en/blog/elegant-visualization-of-density-distribution-in-r-using-ridgeline/) was my main resource.
+
+# Importing packages (and fonts)
+```{r, message = FALSE}
+library(tidyverse)
+library(ggridges)
+library(hablar)
+library(viridis)
+library(gridExtra)
+library(extrafont)
+# Importing more fonts - this takes a few minutes!
+# font_import() 
+loadfonts(device = "win") # windowsFonts() to list them
+```
+
+# Data prep
+Reading in the data
+```{r}
+coffee <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
+```
+
+# Density plots of one variable
+Converting to factors and narrowing down the data to Arabica beans only (because there are 1311 data points for Arabica but only 28 for Robusta):
+```{r}
+coffee <- coffee %>% 
+  convert(fct(species, owner, country_of_origin, company, region)) %>% 
+  filter(species == "Arabica")
+```
+
+For each of the following graphs, I selected six countries so they don't get too crowded.
+
+Plotting density plots of body ratings for six countries:
+```{r}
+(p1 <- coffee %>% 
+  filter(country_of_origin %in% c("Mexico", "Colombia", "Guatemala", "Brazil", "Honduras", "Costa Rica")) %>%
+  ggplot(aes(x = body, y = country_of_origin, fill = country_of_origin)) +
+  geom_density_ridges(scale = 1.5, alpha = 0.7) +
+  scale_fill_manual(values = c("#2c1608", "#c66710", "#f6aa20", "#2c1608", "#c66710", "#f6aa20")) +
+  theme_ridges(grid = FALSE, center_axis_labels = TRUE) + 
+  scale_x_continuous(limits = c(6.5, NA)) +
+  labs(title = "Body ratings", x = "Rating (0 - 10)", y = "Country of origin") +
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position = "none", 
+        text = element_text(size = 12, family = "Palatino Linotype"))
+)
+```
+
+In this next plot, the fill colour is determined by the value (lower values = dark purple, higher values = yellow):
+```{r}
+(p2 <- coffee %>% 
+  filter(country_of_origin %in% c("Mexico", "Colombia", "Guatemala", "Brazil", "Honduras", "Costa Rica")) %>%
+  ggplot(aes(x = acidity, y = country_of_origin, fill = stat(x))) +
+  geom_density_ridges_gradient(scale = 1.5, alpha = 0.7) +
+  scale_fill_viridis(name = "acidity", option = "B") + 
+  theme_ridges(grid = FALSE, center_axis_labels = TRUE) +
+  scale_x_continuous(limits = c(6.5, NA)) +
+  labs(title = "Acidity ratings", x = "Rating (0 - 10)", y = "Country of origin") +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "none", 
+        text = element_text(size = 12, family = "Palatino Linotype"))
+)
+```
+
+Creating histograms instead of density plots:
+```{r}
+(p3 <- coffee %>% 
+  filter(country_of_origin %in% c("Mexico", "Colombia", "Guatemala", "Brazil", "Honduras", "Costa Rica")) %>%
+  ggplot(aes(x = body, y = country_of_origin, fill = country_of_origin)) +
+  geom_density_ridges(stat = "binline", scale = 0.9, alpha = 0.7) +
+  scale_fill_manual(values = c("#2c1608", "#c66710", "#f6aa20", "#2c1608", "#c66710", "#f6aa20")) +
+  theme_ridges(grid = FALSE, center_axis_labels = TRUE) + 
+  labs(title = "Body ratings", x = "Rating (0 - 10)", y = "Country of origin") + 
+  scale_x_continuous(limits = c(6.5, NA)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "none", 
+        text = element_text(size = 12, family="Palatino Linotype"))
+)
+```
+
+# Making the data longer
+This is necessary for the following plots.
+The new data frame only includes the countries, categories, and ratings per category.
+```{r}
+coffee_long <- coffee %>% 
+  select(country_of_origin, aroma, flavor, aftertaste, acidity, body, balance, uniformity, clean_cup, sweetness) %>% 
+  pivot_longer(cols = -country_of_origin, 
+               names_to = "category", 
+               values_to = "rating")
+```
+
+# Density plots of several variables
+...specifically, of the coffee's aftertaste, flavour, and body:
+```{r}
+(p4 <- coffee_long %>% 
+  filter(category %in% c("aftertaste", "flavor", "body")) %>% 
+  filter(country_of_origin %in% c("Mexico", "Colombia", "Guatemala", "Brazil", "Honduras", "Costa Rica")) %>% 
+  ggplot(aes(x = rating, y = country_of_origin, fill = category)) +
+  geom_density_ridges(scale = 1.8, alpha = 0.7) +
+  scale_fill_manual(values = c("#2c1608", "#c66710", "#f6aa20"), labels = c("aftertaste", "flavor", "body")) +
+  theme_ridges(grid = FALSE, center_axis_labels = TRUE) + 
+  labs(title = "Coffee ratings", x = "Rating (0 - 10)", y = "Country of origin", fill = "Category") + 
+  scale_x_continuous(limits = c(6.5, NA)) +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "bottom", legend.direction = "horizontal", legend.justification = "left",
+        text = element_text(size = 12, family = "Palatino Linotype"))
+)
+```
+
+Arranging the four plots:
+```{r, message = FALSE, warning = FALSE}
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
