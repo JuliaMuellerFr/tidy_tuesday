@@ -8,7 +8,7 @@ Very much a work in progress - feedback welcome: [Twitter](https://twitter.com/J
 
 ## 2020
 
-### 20/07/21: Coffee Ratings
+### [20/07/21](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_07_21_CoffeeRatings.Rmd): Coffee Ratings
 
 **Ridgeline plots** visualising density distributions of coffee beans rated on various dimensions (e.g. body, acidity, flavour, aftertaste)
 
@@ -16,7 +16,7 @@ Very much a work in progress - feedback welcome: [Twitter](https://twitter.com/J
 
 
 
-### 20/05/05 Animal Crossing
+### [20/05/05](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_05_05_AnimalCrossing.Rmd) Animal Crossing
 
 **Chord diagram** of personality traits for the seven most common species in Animal Crossing
 
@@ -24,7 +24,7 @@ Very much a work in progress - feedback welcome: [Twitter](https://twitter.com/J
 
 
 
-### 20/02/25 Measles
+### [20/02/25](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_02_25_Measles.Rmd) Measles
 
 **Lollipop charts** of vaccination rates by US states
 
@@ -34,7 +34,7 @@ Very much a work in progress - feedback welcome: [Twitter](https://twitter.com/J
 
 
 
-### 20/02/18 Food Consumption
+### [20/02/18](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_02_18_FoodConsumption.Rmd) Food Consumption
 
 Playing around with **geom_text() labels**
 
@@ -44,7 +44,7 @@ Playing around with **geom_text() labels**
 
 
 
-### 20/02/11 Hotels
+### [20/02/11](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_02_11_Hotels.Rmd) Hotels
 
 Working with both size and colour to express different types of information in one graph
 
@@ -54,7 +54,7 @@ Working with both size and colour to express different types of information in o
 
 
 
-### 20/01/28 NYC Squirrels
+### [20/01/28](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_01_28_NYCsquirrels.Rmd) NYC Squirrels
 
 A simple **bar chart** of squirrel sightings in NYC and a **wordcloud** showing what they were busy doing when they were spotted.
 
@@ -64,7 +64,7 @@ A simple **bar chart** of squirrel sightings in NYC and a **wordcloud** showing 
 
 
 
-### 20/01/21 Spotify
+### [20/01/21](https://github.com/JuliaMuellerFr/tidy_tuesday/blob/main/scripts/20_01_21_Spotify.Rmd) Spotify
 
 **Correlation plot** of all numeric variables and **linegraph** with labels for the most popular songs per genre.
 
