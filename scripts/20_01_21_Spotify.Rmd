@@ -12,90 +12,97 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 Created at an [R-Ladies Freiburg meetup](https://www.meetup.com/rladies-freiburg/)!
 
 
-Loading packages
+Loading packages and reading in data
 ```{r}
 library(tidyverse)
-library(Hmisc)
-library(RColorBrewer)
-library(extrafont)
-library(viridis)
-# Importing more fonts - this takes a few minutes!
-# font_import() 
-loadfonts(device = "win") # windowsFonts() to list them
-```
-Reading in data
-```{r}
+library(corrplot)
+
 spotify <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv')
+
+# colours
+spotify_6 <- c("#0C8C4C", "#008162", "#00736E", "#006571", "#115668", "#2F4858")
+spotify_colours <- colorRampPalette(c("#00848C", "#ffffff", "#0c8c4c"))
 ```
 
 Relabeling the playlist genres and labeling the modes in an informative way
 ```{r}
-spotify$playlist_genre <- as.factor(spotify$playlist_genre)
-spotify$playlist_genre <- plyr::revalue(spotify$playlist_genre,
-                                  c(edm = "EDM",
-                                    latin = "Latin",
-                                    pop = "Pop",
-                                    'r&b' = "R&B",
-                                    rap = "Rap",
-                                    rock = "Rock"))
-
-summary(spotify$playlist_genre)
-
-spotify$mode <- factor(spotify$mode,
-                       labels = c("minor", "major"))
-summary(spotify$mode)
+spotify <- spotify %>% 
+  mutate(across(where(is.character), as.factor)) %>% 
+  mutate(playlist_genre = recode(playlist_genre,
+                                 edm = "EDM",
+                                 latin = "Latin",
+                                 pop = "Pop",
+                                 'r&b' = "R&B",
+                                 rap = "Rap",
+                                 rock = "Rock"),
+         mode = recode(mode,
+                       "0" = "minor",
+                       "1" = "major"),
+         mode = as_factor(mode),
+         key = as_factor(key)
+         ) %>% 
+  rename("popularity" = track_popularity,
+         "duration" = duration_ms)
 ```
 
-Plotting
+## Correlation matrix
 ```{r}
-ggplot(spotify, aes(x = reorder(playlist_genre, danceability), y = danceability, 
-                    fill = playlist_genre, colour = playlist_genre)) + 
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), trim = FALSE, alpha = 0.7) +
-  geom_jitter(width = 0.35, size = 0.8, alpha = 0.2) +
-  coord_flip() +
-  stat_summary(fun.data=mean_sdl, fun.args = list(mult = 1), 
-                 geom = "pointrange", aes(color = playlist_genre)) +
-  scale_fill_brewer(palette = "RdBu") +
-  scale_colour_brewer(palette = "RdBu") +
-  theme_light() +
-  labs(title = "Danceability of different genres",
-       x = "Genre", y = "Danceability") +
-  theme(legend.position = "none",
-        text = element_text(size = 14, family = "Poor Richard")) +
-  facet_wrap(~ mode) + 
-  ylim(0, 1)
+spotify_cor <- spotify %>% 
+  select(where(is.numeric)) %>% 
+  drop_na() %>% 
+  cor()
 
-ggplot(spotify, aes(x = reorder(playlist_genre, danceability), y = danceability, 
-                    fill = playlist_genre, colour = playlist_genre)) + 
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), trim = FALSE, alpha = 0.7) +
-  geom_jitter(width = 0.35, size = 0.8, alpha = 0.2) +
-  coord_flip() +
-  stat_summary(fun.data=mean_sdl, fun.args = list(mult = 1), 
-                 geom = "pointrange", aes(color = playlist_genre)) +
-  scale_fill_viridis_d() + scale_colour_viridis_d() +
-  theme_light() +
-  labs(title = "Danceability of different genres",
-       x = "Genre", y = "Danceability") +
-  theme(legend.position = "none",
-        text = element_text(size = 14, family = "Poor Richard")) +
-  facet_wrap(~ mode) + 
-  ylim(0, 1)
+spotify_sig <- spotify %>% 
+  select(where(is.numeric)) %>% 
+  drop_na() %>% 
+  cor.mtest(conf.level = .95)
 
-ggplot(spotify, aes(x = reorder(playlist_genre, danceability), y = danceability, 
-                    fill = playlist_genre, colour = playlist_genre)) + 
-  geom_violin(trim = FALSE, alpha = 0.7) +
-  geom_jitter(width = 0.35, size = 0.8, alpha = 0.1) +
-  coord_flip() +
-  stat_summary(fun.data=mean_sdl, fun.args = list(mult = 1), 
-                 geom = "pointrange", aes(color = playlist_genre)) +
-  scale_colour_manual(values = c("#DEAD00", "#83A92E", "#2C9759", "#007F72", "#006472", "#2F4858")) +
-  scale_fill_manual(values = c("#DEAD00", "#83A92E", "#2C9759", "#007F72", "#006472", "#2F4858")) +
-  theme_light() +
-  labs(title = "Danceability of different genres",
-       x = "Genre", y = "Danceability") +
-  theme(legend.position = "none",
-        text = element_text(size = 14, family = "Poor Richard")) +
-  facet_wrap(~ mode) + 
-  ylim(0, 1)
+corrplot(M, p.mat = res1$p, insig = "label_sig",
+         sig.level = c(.001, .01, .05), pch.cex = .9, pch.col = "white")
+
+corrplot(spotify_cor, 
+         method = "square",
+         type = "lower",
+         tl.col = "black",
+         col = spotify_colours(20),
+         tl.srt = 45,
+         p.mat = spotify_sig$p,
+         insig = "label_sig",
+         sig.level = c(.001, .01, .05),
+         pch.col = "white",
+         pch.cex = .9)
 ```
+
+## Energy loudness correlation
+```{r}
+spotify %>% 
+  group_by(playlist_genre) %>% 
+  arrange(desc(popularity)) %>% 
+  slice_head(n = 30) %>% 
+  ungroup() %>% 
+  ggplot() +
+  aes(x = loudness, y = energy, colour = playlist_genre) +
+  geom_smooth(method = "lm") +
+  facet_wrap(~ playlist_genre, scales = "free") + 
+  geom_text(
+            aes(loudness, energy, 
+                label = track_name,
+                alpha = popularity),
+            size = 4) +
+  scale_colour_manual(values = spotify_6) +
+  scale_fill_manual(values = spotify_6) +
+  theme_classic() +
+  theme(legend.position = "none",
+        text = element_text(size = 12, colour = "black"),
+        strip.background = element_rect(fill="white"),
+        strip.text = element_text(size = 12, color = "black"),
+        panel.border = element_rect(color = "black", fill = NA, size = 1), 
+        axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_blank()) +
+    labs(fill = NULL, colour = NULL,
+       x = "loudness", y = "energy",
+       title = "Song's loudness by energy",
+       subtitle = "Showing the 30 most popular songs per category",
+       caption = "Darker font indicates a more popular song")
+```
+
 
